@@ -1,0 +1,18 @@
+{
+  "flex": { "flex": 1 },
+  "flex-row": { "flexDirection": "row" },
+  "flex-col": { "flexDirection": "column" },
+  "items-center": { "alignItems": "center" },
+  "justify-center": { "justifyContent": "center" },
+  "bg-black": { "backgroundColor": "#000000" },
+  "text-white": { "color": "#FFFFFF" },
+  "w-full": { "width": "100%" },
+  "h-full": { "height": "100%" },
+  "p-4": { "padding": 16 },
+  "m-4": { "margin": 16 },
+  "rounded-lg": { "borderRadius": 8 },
+  "absolute": { "position": "absolute" },
+  "bottom-0": { "bottom": 0 },
+  "left-0": { "left": 0 },
+  "right-0": { "right": 0 }
+}
