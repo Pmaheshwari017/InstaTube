@@ -1,35 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import { supabase } from '../utils/supabase';
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import { supabase } from "../utils/supabase";
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
-  const [username, setUsername] = useState('');
-  const [bio, setBio] = useState('');
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
+
       const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
         .single();
+
       if (profile) {
         setUsername(profile.username);
         setBio(profile.bio);
       }
     };
+
     fetchUser();
   }, []);
 
   const handleUpdateProfile = async () => {
+    setLoading(true);
     const { error } = await supabase
-      .from('profiles')
+      .from("profiles")
       .upsert({ id: user.id, username, bio });
-    if (error) alert(error.message);
-    else alert('Profile updated!');
+
+    if (error) {
+      Alert.alert("Error", error.message);
+    } else {
+      Alert.alert("Success", "Profile updated!");
+    }
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      Alert.alert("Error", error.message);
+    } else {
+    }
   };
 
   return (
@@ -49,7 +69,12 @@ export default function ProfileScreen() {
         onChangeText={setBio}
         placeholder="Enter your bio"
       />
-      <Button title="Update Profile" onPress={handleUpdateProfile} />
+      <Button
+        title={loading ? "Loading..." : "Update Profile"}
+        onPress={handleUpdateProfile}
+        disabled={loading}
+      />
+      <Button title="Logout" onPress={handleLogout} />
     </View>
   );
 }

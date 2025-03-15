@@ -14,15 +14,13 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator, // Added for the loader
+  ActivityIndicator,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { Video } from "expo-av";
 import * as MediaLibrary from "expo-media-library";
-import { supabase } from "../utils/supabase"; // Import Supabase client
 
 export default function CameraScreen() {
-  // State and refs
   const [facing, setFacing] = useState("back");
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [microphonePermission, requestMicrophonePermission] =
@@ -33,13 +31,11 @@ export default function CameraScreen() {
   const cameraRef = useRef(null);
   const timerRef = useRef(null);
 
-  // Mutation for uploading video
   const uploadMutation = useMutation({
     mutationFn: async ({ videoUri, supabaseFileName }) => {
       const fileName = videoUri.split("/").pop();
       const newPath = `${FileSystem.documentDirectory}${fileName}`;
 
-      // Copy the file to a supported location
       await FileSystem.copyAsync({
         from: videoUri,
         to: newPath,
@@ -78,14 +74,11 @@ export default function CameraScreen() {
     },
   });
 
-  // Check if both camera and microphone permissions are granted
   if (!cameraPermission || !microphonePermission) {
-    // Permissions are still loading.
     return <View />;
   }
 
   if (!cameraPermission.granted || !microphonePermission.granted) {
-    // Permissions are not granted yet.
     return (
       <View style={styles.container}>
         <Text style={{ textAlign: "center" }}>
@@ -102,15 +95,12 @@ export default function CameraScreen() {
     );
   }
 
-  // Toggle between front and back camera
   const toggleCameraFacing = () => {
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
-  // Handle starting video recording
   const handleStartRecording = async () => {
     if (cameraRef.current) {
-      // Ensure microphone permission is granted
       if (!microphonePermission.granted) {
         Alert.alert(
           "Permission Required",
@@ -120,15 +110,15 @@ export default function CameraScreen() {
       }
 
       setIsRecording(true);
-      setRecordingTime(0); // Reset timer
+      setRecordingTime(0);
       timerRef.current = setInterval(() => {
-        setRecordingTime((prevTime) => prevTime + 1); // Increment timer every second
+        setRecordingTime((prevTime) => prevTime + 1);
       }, 1000);
 
       try {
         const options = {
-          maxDuration: 60, // 60 seconds max
-          quality: "720p", // Video quality
+          maxDuration: 60,
+          quality: "720p",
         };
         const recordedVideo = await cameraRef.current.recordAsync(options);
         console.log("Recorded Video URI:", recordedVideo.uri);
@@ -138,7 +128,7 @@ export default function CameraScreen() {
         Alert.alert("Error", "Failed to record video. Please try again.");
       } finally {
         setIsRecording(false);
-        clearInterval(timerRef.current); // Stop the timer
+        clearInterval(timerRef.current);
       }
     }
   };
@@ -154,7 +144,7 @@ export default function CameraScreen() {
         Alert.alert("Error", "Failed to stop recording. Please try again.");
       } finally {
         setIsRecording(false);
-        clearInterval(timerRef.current); // Stop the timer
+        clearInterval(timerRef.current);
       }
     }
   };
@@ -227,13 +217,13 @@ export default function CameraScreen() {
         <View style={styles.previewButtonsContainer}>
           <TouchableOpacity
             style={styles.previewButton}
-            onPress={() => setVideoUri(null)} // Retry recording
+            onPress={() => setVideoUri(null)}
           >
             <Text style={styles.previewButtonText}>Retry</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.previewButton}
-            onPress={handleUploadToSupabase} // Upload to Supabase
+            onPress={handleUploadToSupabase}
           >
             <Text style={styles.previewButtonText}>Upload</Text>
           </TouchableOpacity>
@@ -359,7 +349,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)", // Semi-transparent background
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
   loaderText: {
     marginTop: 10,

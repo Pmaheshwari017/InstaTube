@@ -11,34 +11,28 @@ import {
   RefreshControl,
 } from "react-native";
 import { Video } from "expo-av";
-import { Ionicons } from "@expo/vector-icons"; // For icons
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../utils/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useFocusEffect } from "@react-navigation/native"; // For focus detection
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function VideoFeed() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [visibleVideoIndex, setVisibleVideoIndex] = useState(null); // Track the currently visible video
-  const [isRefreshing, setIsRefreshing] = useState(false); // Track refresh state
-  const videoRefs = useRef([]); // Refs to control video playback
-  const queryClient = useQueryClient(); // Access the query client
+  const [visibleVideoIndex, setVisibleVideoIndex] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const videoRefs = useRef([]);
 
   // Fetch videos using Tanstack Query
   const {
     data: supaVideos = [],
     isLoading,
     isError,
-    refetch, // Function to manually refetch data
+    refetch,
   } = useQuery({
-    queryKey: ["videos"], // Unique key for this query
+    queryKey: ["videos"],
     queryFn: async () => {
-      console.log("await supabase.storage: ", supabase.storage);
-      console.log("supabase: ", JSON.stringify(supabase, null, 2));
-      const { data, error } = await supabase.storage
-        .from("videos") // Replace with your bucket name
-        .list(); // List all files in the bucket
+      const { data, error } = await supabase.storage.from("videos").list();
 
-      console.log("data: ", JSON.stringify(data, null, 2));
       if (error) {
         throw error;
       }
@@ -47,7 +41,6 @@ export default function VideoFeed() {
         return [];
       }
 
-      // Map the data to the required format
       return data.map((file) => {
         const publicUrl = supabase.storage
           .from("videos")
@@ -56,8 +49,8 @@ export default function VideoFeed() {
         return {
           video_url: publicUrl,
           title: file.name,
-          user: "tapin_fyp", // Replace with actual user data if available
-          description: "Fast Duo - Appono", // Replace with actual description if available
+          user: "tapin_fyp",
+          description: "Fast Duo - Appono",
         };
       });
     },
@@ -65,23 +58,15 @@ export default function VideoFeed() {
 
   // Refresh function
   const handleRefresh = async () => {
-    setIsRefreshing(true); // Show refresh indicator
-    await refetch(); // Refetch data
-    setIsRefreshing(false); // Hide refresh indicator
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
   };
 
   // Trigger refresh when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      let isActive = true; // Track if the screen is still focused
-
-      if (isActive) {
-        handleRefresh(); // Refresh data when the screen gains focus
-      }
-
-      return () => {
-        isActive = false; // Cleanup when the screen loses focus
-      };
+      handleRefresh();
     }, [])
   );
 
@@ -98,8 +83,8 @@ export default function VideoFeed() {
   // Handle visibility change
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems.length > 0) {
-      const visibleIndex = viewableItems[0].index; // Get the index of the first visible item
-      setVisibleVideoIndex(visibleIndex); // Update the visible video index
+      const visibleIndex = viewableItems[0].index;
+      setVisibleVideoIndex(visibleIndex);
     }
   }).current;
 
@@ -107,9 +92,9 @@ export default function VideoFeed() {
   useEffect(() => {
     videoRefs.current.forEach((video, index) => {
       if (video && index === visibleVideoIndex) {
-        video.playAsync(); // Play the visible video
+        video.playAsync();
       } else if (video) {
-        video.pauseAsync(); // Pause all other videos
+        video.pauseAsync();
       }
     });
   }, [visibleVideoIndex]);
@@ -138,18 +123,17 @@ export default function VideoFeed() {
     return (
       <View style={styles.videoContainer}>
         <Video
-          ref={(ref) => (videoRefs.current[index] = ref)} // Assign ref to each video
-          source={{ uri: item.video_url }} // Use the URL from Supabase
+          ref={(ref) => (videoRefs.current[index] = ref)}
+          source={{ uri: item.video_url }}
           rate={1.0}
           volume={1.0}
           isMuted={false}
           resizeMode="cover"
-          shouldPlay={false} // Do not autoplay initially
+          shouldPlay={false}
           isLooping
           style={styles.video}
-          useNativeControls={false} // Disable native controls for custom UI
+          useNativeControls={false}
         />
-        {/* Overlay UI */}
         <View style={styles.overlay}>
           <View style={styles.userInfo}>
             <View>
@@ -189,24 +173,21 @@ export default function VideoFeed() {
       />
 
       <FlatList
-        data={filteredVideos} // Use filtered videos
+        data={filteredVideos}
         renderItem={renderItem}
         keyExtractor={(item, index) => index.toString()}
         pagingEnabled // Enable paging
-        snapToInterval={Dimensions.get("window").height} // Snap interval set to screen height
-        snapToAlignment="start" // Snap to the start of the item
-        decelerationRate="fast" // Make scrolling feel snappier
+        snapToInterval={Dimensions.get("window").height}
+        snapToAlignment="start"
+        decelerationRate="fast"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ marginBottom: 50, paddingBottom: 60 }}
-        onViewableItemsChanged={onViewableItemsChanged} // Track visible items
+        onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={{
-          itemVisiblePercentThreshold: 50, // Consider an item visible if 50% of it is on screen
+          itemVisiblePercentThreshold: 50,
         }}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing} // Show refresh indicator
-            onRefresh={handleRefresh} // Trigger refresh
-          />
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
       />
     </View>
@@ -218,11 +199,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    height: Dimensions.get("window").height, // Set height to full screen
+    height: Dimensions.get("window").height,
   },
   video: {
     width: "100%",
-    height: "100%", // Fill the container
+    height: "100%",
   },
   overlay: {
     position: "absolute",
