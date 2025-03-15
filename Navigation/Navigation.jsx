@@ -25,13 +25,13 @@ export default function Navigation() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: "black", // Background color of the tab bar
-    borderTopWidth: 0, // Remove the top border
+    backgroundColor: "black",
+    borderTopWidth: 0,
   },
   activeTintColor: {
-    color: "white", // Color for the active tab label
+    color: "white",
   },
   inactiveTintColor: {
-    color: "gray", // Color for the inactive tab label
+    color: "gray",
   },
 });
