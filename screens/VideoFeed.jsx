@@ -9,6 +9,12 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
+  Share,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  Button,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +26,10 @@ export default function VideoFeed() {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleVideoIndex, setVisibleVideoIndex] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
   const videoRefs = useRef([]);
 
   // Fetch videos using Tanstack Query
@@ -124,6 +134,44 @@ export default function VideoFeed() {
     );
   }
 
+  const handleLike = () => {
+    setLiked(!liked);
+  };
+
+  const handleShare = async () => {
+    try {
+      const result = await Share.share({
+        message: "Check out this awesome post!",
+        url: "https://instatube.com",
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          Alert.alert("Shared successfully!");
+        } else {
+          Alert.alert("Shared successfully!");
+        }
+      } else if (result.action === Share.dismissedAction) {
+        Alert.alert("Sharing dismissed");
+      }
+    } catch (error) {
+      Alert.alert("Error sharing:", error.message);
+    }
+  };
+  const handleComment = () => {
+    setCommentModalVisible(true);
+  };
+
+  const handleSendComment = () => {
+    if (commentText.trim()) {
+      Alert.alert("Comment Sent!", `Your comment: ${commentText}`);
+      setCommentText("");
+      setCommentModalVisible(false);
+    } else {
+      Alert.alert("Error", "Please write a comment before sending.");
+    }
+  };
+
   const renderItem = ({ item, index }) => {
     return (
       <View style={styles.videoContainer}>
@@ -150,19 +198,52 @@ export default function VideoFeed() {
             </TouchableOpacity>
           </View>
           <View style={styles.iconContainer}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="heart" size={30} color="white" />
-              <Text style={styles.iconText}>Like</Text>
+            <TouchableOpacity style={styles.iconButton} onPress={handleLike}>
+              <Ionicons
+                name={liked ? "heart" : "heart-outline"}
+                size={30}
+                color={liked ? "red" : "white"}
+              />
+              <Text style={styles.iconText}>{liked ? "Unlike" : "Like"}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleComment}>
               <Ionicons name="chatbubble" size={30} color="white" />
               <Text style={styles.iconText}>Comment</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
               <Ionicons name="share-social" size={30} color="white" />
               <Text style={styles.iconText}>Share</Text>
             </TouchableOpacity>
           </View>
+          <Modal
+            visible={commentModalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setCommentModalVisible(false)}
+          >
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              style={styles.modalContainer}
+            >
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Add a Comment</Text>
+                <TextInput
+                  style={styles.commentInput}
+                  placeholder="Write your comment..."
+                  multiline
+                  value={commentText}
+                  onChangeText={setCommentText}
+                />
+                <View style={styles.modalButtons}>
+                  <Button
+                    title="Cancel"
+                    onPress={() => setCommentModalVisible(false)}
+                  />
+                  <Button title="Send" onPress={handleSendComment} />
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
         </View>
       </View>
     );
@@ -276,5 +357,34 @@ const styles = StyleSheet.create({
   errorText: {
     color: "red",
     fontSize: 16,
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    padding: 20,
+    backgroundColor: "white",
+    borderRadius: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  commentInput: {
+    height: 100,
+    borderColor: "#ccc",
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });
