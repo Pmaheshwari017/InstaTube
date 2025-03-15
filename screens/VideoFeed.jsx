@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,29 +8,37 @@ import {
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { Video } from "expo-av";
 import { Ionicons } from "@expo/vector-icons"; // For icons
 import { supabase } from "../utils/supabase";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useFocusEffect } from "@react-navigation/native"; // For focus detection
 
 export default function VideoFeed() {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleVideoIndex, setVisibleVideoIndex] = useState(null); // Track the currently visible video
+  const [isRefreshing, setIsRefreshing] = useState(false); // Track refresh state
   const videoRefs = useRef([]); // Refs to control video playback
+  const queryClient = useQueryClient(); // Access the query client
 
   // Fetch videos using Tanstack Query
   const {
     data: supaVideos = [],
     isLoading,
     isError,
+    refetch, // Function to manually refetch data
   } = useQuery({
     queryKey: ["videos"], // Unique key for this query
     queryFn: async () => {
+      console.log("await supabase.storage: ", supabase.storage);
+      console.log("supabase: ", JSON.stringify(supabase, null, 2));
       const { data, error } = await supabase.storage
         .from("videos") // Replace with your bucket name
         .list(); // List all files in the bucket
 
+      console.log("data: ", JSON.stringify(data, null, 2));
       if (error) {
         throw error;
       }
@@ -54,6 +62,28 @@ export default function VideoFeed() {
       });
     },
   });
+
+  // Refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true); // Show refresh indicator
+    await refetch(); // Refetch data
+    setIsRefreshing(false); // Hide refresh indicator
+  };
+
+  // Trigger refresh when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true; // Track if the screen is still focused
+
+      if (isActive) {
+        handleRefresh(); // Refresh data when the screen gains focus
+      }
+
+      return () => {
+        isActive = false; // Cleanup when the screen loses focus
+      };
+    }, [])
+  );
 
   // Filter videos based on search query
   const filteredVideos = supaVideos.filter((video) => {
@@ -172,6 +202,12 @@ export default function VideoFeed() {
         viewabilityConfig={{
           itemVisiblePercentThreshold: 50, // Consider an item visible if 50% of it is on screen
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing} // Show refresh indicator
+            onRefresh={handleRefresh} // Trigger refresh
+          />
+        }
       />
     </View>
   );

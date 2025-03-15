@@ -5,6 +5,7 @@ import {
   useMicrophonePermissions,
 } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
+import { useMutation } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -13,24 +14,69 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator, // Added for the loader
 } from "react-native";
+import * as FileSystem from "expo-file-system";
 import { Video } from "expo-av";
-import { shareAsync } from "expo-sharing";
 import * as MediaLibrary from "expo-media-library";
+import { supabase } from "../utils/supabase"; // Import Supabase client
 
 export default function CameraScreen() {
+  // State and refs
   const [facing, setFacing] = useState("back");
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [microphonePermission, requestMicrophonePermission] =
     useMicrophonePermissions();
-  const [photo, setPhoto] = useState(null);
   const [videoUri, setVideoUri] = useState(null);
-  console.log("videoUri: ", videoUri);
-  const [saved, setSaved] = useState();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const cameraRef = useRef(null);
   const timerRef = useRef(null);
+
+  // Mutation for uploading video
+  const uploadMutation = useMutation({
+    mutationFn: async ({ videoUri, supabaseFileName }) => {
+      const fileName = videoUri.split("/").pop();
+      const newPath = `${FileSystem.documentDirectory}${fileName}`;
+
+      // Copy the file to a supported location
+      await FileSystem.copyAsync({
+        from: videoUri,
+        to: newPath,
+      });
+
+      // Upload the video to Supabase Storage
+      const uploadResponse = await FileSystem.uploadAsync(
+        `https://yedwgdujzvheonypppzd.supabase.co/storage/v1/object/videos/${supabaseFileName}`,
+        newPath,
+        {
+          headers: {
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZHdnZHVqenZoZW9ueXBwcHpkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTY5ODYzNCwiZXhwIjoyMDU3Mjc0NjM0fQ.ce_fKpo5Y7FbBAKZEtQxeJgh7LM3X6AzYoQpRA5cM5s`,
+            "Content-Type": "video/mp4",
+          },
+          httpMethod: "POST",
+          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+        }
+      );
+
+      // Clean up the copied file
+      await FileSystem.deleteAsync(newPath);
+
+      return uploadResponse;
+    },
+    onSuccess: (data) => {
+      Alert.alert("Success", "Video uploaded successfully!", [{ text: "OK" }]);
+      console.log("Uploaded Video URL:", data.body);
+    },
+    onError: (error) => {
+      console.error("Error uploading video:", error);
+      Alert.alert(
+        "Upload Failed",
+        "An error occurred while uploading the video. Please try again.",
+        [{ text: "OK" }]
+      );
+    },
+  });
 
   // Check if both camera and microphone permissions are granted
   if (!cameraPermission || !microphonePermission) {
@@ -57,9 +103,9 @@ export default function CameraScreen() {
   }
 
   // Toggle between front and back camera
-  function toggleCameraFacing() {
+  const toggleCameraFacing = () => {
     setFacing((current) => (current === "back" ? "front" : "back"));
-  }
+  };
 
   // Handle starting video recording
   const handleStartRecording = async () => {
@@ -115,6 +161,12 @@ export default function CameraScreen() {
 
   // Handle uploading a video from the gallery
   const handleUploadVideo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Error", "Permission to access media library is required.");
+      return;
+    }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
@@ -124,6 +176,17 @@ export default function CameraScreen() {
     if (!result.canceled) {
       setVideoUri(result.assets[0].uri);
     }
+  };
+
+  // Handle uploading video to Supabase
+  const handleUploadToSupabase = async () => {
+    if (!videoUri) {
+      Alert.alert("Error", "No video to upload.");
+      return;
+    }
+
+    const supabaseFileName = `video_${Date.now()}.mp4`;
+    uploadMutation.mutate({ videoUri, supabaseFileName });
   };
 
   // Save video to the media library
@@ -170,9 +233,7 @@ export default function CameraScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.previewButton}
-            onPress={() => {
-              Alert.alert("Upload", "Video uploaded successfully!");
-            }}
+            onPress={handleUploadToSupabase} // Upload to Supabase
           >
             <Text style={styles.previewButtonText}>Upload</Text>
           </TouchableOpacity>
@@ -180,6 +241,14 @@ export default function CameraScreen() {
             <Text style={styles.previewButtonText}>Save</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Loader while uploading */}
+        {uploadMutation.isLoading && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#0000ff" />
+            <Text style={styles.loaderText}>Uploading video...</Text>
+          </View>
+        )}
       </View>
     );
   }
@@ -281,5 +350,20 @@ const styles = StyleSheet.create({
   previewButtonText: {
     color: "white",
     fontSize: 16,
+  },
+  loaderContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.8)", // Semi-transparent background
+  },
+  loaderText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#000",
   },
 });
