@@ -1,4 +1,4 @@
-import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
+import { AntDesign, FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import {
   CameraView,
   useCameraPermissions,
@@ -80,17 +80,28 @@ export default function CameraScreen() {
 
   if (!cameraPermission.granted || !microphonePermission.granted) {
     return (
-      <View style={styles.container}>
-        <Text style={{ textAlign: "center" }}>
-          We need your permission to use the camera and microphone.
-        </Text>
-        <Button
-          onPress={async () => {
-            await requestCameraPermission();
-            await requestMicrophonePermission();
-          }}
-          title="Grant Permission"
-        />
+      <View style={styles.container1}>
+        <View style={styles.card}>
+          <FontAwesome
+            name="camera"
+            size={50}
+            color="white"
+            style={styles.icon}
+          />
+          <Text style={styles.title}>Permission Request</Text>
+          <Text style={styles.description}>
+            We need your permission to access your camera and microphone in
+            order to provide the best experience.
+          </Text>
+          <Button
+            onPress={async () => {
+              await requestCameraPermission();
+              await requestMicrophonePermission();
+            }}
+            title="Grant Permission"
+            color="#007bff" // Custom color for the button
+          />
+        </View>
       </View>
     );
   }
@@ -355,5 +366,38 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#000",
+  },
+  container1: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f7f7f7", // Background color for the whole screen
+  },
+  card: {
+    width: "80%", // Adjust the width to fit your screen
+    padding: 20,
+    backgroundColor: "#ffffff",
+    borderRadius: 15,
+    elevation: 5, // Adds shadow on Android
+    shadowColor: "#000", // Shadow for iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    alignItems: "center",
+  },
+  icon: {
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 10,
+  },
+  description: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 20,
   },
 });

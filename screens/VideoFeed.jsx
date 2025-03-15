@@ -67,6 +67,11 @@ export default function VideoFeed() {
   useFocusEffect(
     useCallback(() => {
       handleRefresh();
+      return () => {
+        videoRefs.current.forEach((video, index) => {
+          video.pauseAsync();
+        });
+      };
     }, [])
   );
 
