@@ -79,7 +79,9 @@ export default function VideoFeed() {
       handleRefresh();
       return () => {
         videoRefs.current.forEach((video, index) => {
-          video.pauseAsync();
+          if (video.pauseAsync()) {
+            video.pauseAsync();
+          }
         });
       };
     }, [])
@@ -248,15 +250,32 @@ export default function VideoFeed() {
       </View>
     );
   };
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
 
   return (
     <View style={{ flex: 1 }}>
-      <TextInput
-        placeholder="Search videos..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={{ padding: 10, borderBottomWidth: 1 }}
-      />
+      <View style={styles.searchContainer}>
+        <Ionicons
+          name="search"
+          size={20}
+          color="#888"
+          style={styles.searchIcon}
+        />
+        <TextInput
+          placeholder="Search videos..."
+          placeholderTextColor="#888"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          style={styles.searchInput}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={clearSearch} style={styles.clearIcon}>
+            <Ionicons name="close-circle" size={20} color="#888" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <FlatList
         data={filteredVideos}
@@ -293,7 +312,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     position: "absolute",
-    bottom: 150,
+    bottom: 200,
     left: 0,
     right: 0,
     padding: 20,
@@ -386,5 +405,26 @@ const styles = StyleSheet.create({
   modalButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 25,
+    paddingHorizontal: 15,
+    marginHorizontal: 20,
+    marginVertical: 10,
+    height: 50,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: "#333",
+  },
+  clearIcon: {
+    marginLeft: 10,
   },
 });
