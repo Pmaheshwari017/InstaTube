@@ -1,3 +1,4 @@
+// VideoFeed.js
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
@@ -21,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../utils/supabase";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect } from "@react-navigation/native";
+import useThemeStore from "../store/themeStore"; // Import the theme store
 
 export default function VideoFeed() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,6 +33,9 @@ export default function VideoFeed() {
   const [commentText, setCommentText] = useState("");
 
   const videoRefs = useRef([]);
+  const { theme, toggleTheme } = useThemeStore(); // Get theme and toggle function
+  console.log("toggleTheme: ", toggleTheme);
+  console.log("theme: ", theme);
 
   // Fetch videos using Tanstack Query
   const {
@@ -119,7 +124,12 @@ export default function VideoFeed() {
   // Render loading state
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={[
+          styles.loadingContainer,
+          theme === "dark" && styles.darkBackground,
+        ]}
+      >
         <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
@@ -128,7 +138,12 @@ export default function VideoFeed() {
   // Render error state
   if (isError) {
     return (
-      <View style={styles.errorContainer}>
+      <View
+        style={[
+          styles.errorContainer,
+          theme === "dark" && styles.darkBackground,
+        ]}
+      >
         <Text style={styles.errorText}>
           Failed to fetch videos. Please try again.
         </Text>
@@ -160,6 +175,7 @@ export default function VideoFeed() {
       Alert.alert("Error sharing:", error.message);
     }
   };
+
   const handleComment = () => {
     setCommentModalVisible(true);
   };
@@ -176,7 +192,12 @@ export default function VideoFeed() {
 
   const renderItem = ({ item, index }) => {
     return (
-      <View style={styles.videoContainer}>
+      <View
+        style={[
+          styles.videoContainer,
+          theme === "dark" && styles.darkBackground,
+        ]}
+      >
         <Video
           ref={(ref) => (videoRefs.current[index] = ref)}
           source={{ uri: item.video_url }}
@@ -192,8 +213,19 @@ export default function VideoFeed() {
         <View style={styles.overlay}>
           <View style={styles.userInfo}>
             <View>
-              <Text style={styles.userName}>{item.user}</Text>
-              <Text style={styles.description}>{item.description}</Text>
+              <Text
+                style={[styles.userName, theme === "dark" && styles.darkText]}
+              >
+                {item.user}
+              </Text>
+              <Text
+                style={[
+                  styles.description,
+                  theme === "dark" && styles.darkText,
+                ]}
+              >
+                {item.description}
+              </Text>
             </View>
             <TouchableOpacity style={styles.followButton}>
               <Text style={styles.followButtonText}>Follow</Text>
@@ -204,17 +236,37 @@ export default function VideoFeed() {
               <Ionicons
                 name={liked ? "heart" : "heart-outline"}
                 size={30}
-                color={liked ? "red" : "white"}
+                color={liked ? "red" : theme === "dark" ? "#ffffff" : "#000000"}
               />
-              <Text style={styles.iconText}>{liked ? "Unlike" : "Like"}</Text>
+              <Text
+                style={[styles.iconText, theme === "dark" && styles.darkText]}
+              >
+                {liked ? "Unlike" : "Like"}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={handleComment}>
-              <Ionicons name="chatbubble" size={30} color="white" />
-              <Text style={styles.iconText}>Comment</Text>
+              <Ionicons
+                name="chatbubble"
+                size={30}
+                color={theme === "dark" ? "#ffffff" : "#000000"}
+              />
+              <Text
+                style={[styles.iconText, theme === "dark" && styles.darkText]}
+              >
+                Comment
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={handleShare}>
-              <Ionicons name="share-social" size={30} color="white" />
-              <Text style={styles.iconText}>Share</Text>
+              <Ionicons
+                name="share-social"
+                size={30}
+                color={theme === "dark" ? "#ffffff" : "#000000"}
+              />
+              <Text
+                style={[styles.iconText, theme === "dark" && styles.darkText]}
+              >
+                Share
+              </Text>
             </TouchableOpacity>
           </View>
           <Modal
@@ -227,11 +279,27 @@ export default function VideoFeed() {
               behavior={Platform.OS === "ios" ? "padding" : "height"}
               style={styles.modalContainer}
             >
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Add a Comment</Text>
+              <View
+                style={[
+                  styles.modalContent,
+                  theme === "dark" && styles.darkModal,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.modalTitle,
+                    theme === "dark" && styles.darkText,
+                  ]}
+                >
+                  Add a Comment
+                </Text>
                 <TextInput
-                  style={styles.commentInput}
+                  style={[
+                    styles.commentInput,
+                    theme === "dark" && styles.darkInput,
+                  ]}
                   placeholder="Write your comment..."
+                  placeholderTextColor={theme === "dark" ? "#888" : "#000"}
                   multiline
                   value={commentText}
                   onChangeText={setCommentText}
@@ -250,29 +318,39 @@ export default function VideoFeed() {
       </View>
     );
   };
+
   const clearSearch = () => {
     setSearchQuery("");
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.searchContainer}>
+    <View style={[styles.container, theme === "dark" && styles.darkBackground]}>
+      <View
+        style={[
+          styles.searchContainer,
+          theme === "dark" && styles.darkSearchContainer,
+        ]}
+      >
         <Ionicons
           name="search"
           size={20}
-          color="#888"
+          color={theme === "dark" ? "#888" : "#333"}
           style={styles.searchIcon}
         />
         <TextInput
           placeholder="Search videos..."
-          placeholderTextColor="#888"
+          placeholderTextColor={theme === "dark" ? "#888" : "#333"}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          style={styles.searchInput}
+          style={[styles.searchInput, theme === "dark" && styles.darkText]}
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={clearSearch} style={styles.clearIcon}>
-            <Ionicons name="close-circle" size={20} color="#888" />
+            <Ionicons
+              name="close-circle"
+              size={20}
+              color={theme === "dark" ? "#888" : "#333"}
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -300,6 +378,25 @@ export default function VideoFeed() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  darkBackground: {
+    backgroundColor: "#121212",
+  },
+  darkText: {
+    color: "#ffffff",
+  },
+  darkSearchContainer: {
+    backgroundColor: "#333",
+  },
+  darkInput: {
+    backgroundColor: "#444",
+    color: "#ffffff",
+  },
+  darkModal: {
+    backgroundColor: "#333",
+  },
   videoContainer: {
     flex: 1,
     justifyContent: "center",
@@ -377,7 +474,6 @@ const styles = StyleSheet.create({
     color: "red",
     fontSize: 16,
   },
-
   modalContainer: {
     flex: 1,
     justifyContent: "center",
@@ -426,5 +522,17 @@ const styles = StyleSheet.create({
   },
   clearIcon: {
     marginLeft: 10,
+  },
+  themeToggleButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    padding: 10,
+    backgroundColor: "#007bff",
+    borderRadius: 5,
+  },
+  themeToggleText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
 });

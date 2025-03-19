@@ -19,6 +19,7 @@ import {
 import * as FileSystem from "expo-file-system";
 import { Video } from "expo-av";
 import * as MediaLibrary from "expo-media-library";
+import useThemeStore from "../store/themeStore"; // Import the theme store
 
 export default function CameraScreen() {
   const [facing, setFacing] = useState("back");
@@ -30,6 +31,7 @@ export default function CameraScreen() {
   const [recordingTime, setRecordingTime] = useState(0);
   const cameraRef = useRef(null);
   const timerRef = useRef(null);
+  const { theme, toggleTheme } = useThemeStore(); // Get theme and toggle function
 
   const uploadMutation = useMutation({
     mutationFn: async ({ videoUri, supabaseFileName }) => {
@@ -47,7 +49,7 @@ export default function CameraScreen() {
         newPath,
         {
           headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllZHdnZHVqenZoZW9ueXBwcHpkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTY5ODYzNCwiZXhwIjoyMDU3Mjc0NjM0fQ.ce_fKpo5Y7FbBAKZEtQxeJgh7LM3X6AzYoQpRA5cM5s`,
+            Authorization: `Bearer YOUR_SUPABASE_TOKEN`,
             "Content-Type": "video/mp4",
           },
           httpMethod: "POST",
@@ -80,16 +82,22 @@ export default function CameraScreen() {
 
   if (!cameraPermission.granted || !microphonePermission.granted) {
     return (
-      <View style={styles.container1}>
-        <View style={styles.card}>
+      <View
+        style={[styles.container1, theme === "dark" && styles.darkBackground]}
+      >
+        <View style={[styles.card, theme === "dark" && styles.darkCard]}>
           <FontAwesome
             name="camera"
             size={50}
-            color="white"
+            color={theme === "dark" ? "#ffffff" : "#000000"}
             style={styles.icon}
           />
-          <Text style={styles.title}>Permission Request</Text>
-          <Text style={styles.description}>
+          <Text style={[styles.title, theme === "dark" && styles.darkText]}>
+            Permission Request
+          </Text>
+          <Text
+            style={[styles.description, theme === "dark" && styles.darkText]}
+          >
             We need your permission to access your camera and microphone in
             order to provide the best experience.
           </Text>
@@ -99,7 +107,7 @@ export default function CameraScreen() {
               await requestMicrophonePermission();
             }}
             title="Grant Permission"
-            color="#007bff" // Custom color for the button
+            color={theme === "dark" ? "#007bff" : "#0000ff"}
           />
         </View>
       </View>
@@ -144,7 +152,6 @@ export default function CameraScreen() {
     }
   };
 
-  // Handle stopping video recording
   const handleStopRecording = async () => {
     if (cameraRef.current && isRecording) {
       try {
@@ -160,7 +167,6 @@ export default function CameraScreen() {
     }
   };
 
-  // Handle uploading a video from the gallery
   const handleUploadVideo = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -179,7 +185,6 @@ export default function CameraScreen() {
     }
   };
 
-  // Handle uploading video to Supabase
   const handleUploadToSupabase = async () => {
     if (!videoUri) {
       Alert.alert("Error", "No video to upload.");
@@ -190,7 +195,6 @@ export default function CameraScreen() {
     uploadMutation.mutate({ videoUri, supabaseFileName });
   };
 
-  // Save video to the media library
   const saveVideo = async () => {
     try {
       if (!videoUri) {
@@ -198,7 +202,6 @@ export default function CameraScreen() {
         return;
       }
 
-      // Save the video to the media library
       await MediaLibrary.saveToLibraryAsync(videoUri);
       Alert.alert("Success", "Video saved to your gallery!", [{ text: "OK" }]);
     } catch (error) {
@@ -211,10 +214,11 @@ export default function CameraScreen() {
     }
   };
 
-  // Render the video player if a video is recorded/uploaded
   if (videoUri) {
     return (
-      <View style={styles.container}>
+      <View
+        style={[styles.container, theme === "dark" && styles.darkBackground]}
+      >
         <Video
           source={{ uri: videoUri }}
           rate={1.0}
@@ -227,23 +231,55 @@ export default function CameraScreen() {
         />
         <View style={styles.previewButtonsContainer}>
           <TouchableOpacity
-            style={styles.previewButton}
+            style={[
+              styles.previewButton,
+              theme === "dark" && styles.darkButton,
+            ]}
             onPress={() => setVideoUri(null)}
           >
-            <Text style={styles.previewButtonText}>Retry</Text>
+            <Text
+              style={[
+                styles.previewButtonText,
+                theme === "dark" && styles.darkText,
+              ]}
+            >
+              Retry
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.previewButton}
+            style={[
+              styles.previewButton,
+              theme === "dark" && styles.darkButton,
+            ]}
             onPress={handleUploadToSupabase}
           >
-            <Text style={styles.previewButtonText}>Upload</Text>
+            <Text
+              style={[
+                styles.previewButtonText,
+                theme === "dark" && styles.darkText,
+              ]}
+            >
+              Upload
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.previewButton} onPress={saveVideo}>
-            <Text style={styles.previewButtonText}>Save</Text>
+          <TouchableOpacity
+            style={[
+              styles.previewButton,
+              theme === "dark" && styles.darkButton,
+            ]}
+            onPress={saveVideo}
+          >
+            <Text
+              style={[
+                styles.previewButtonText,
+                theme === "dark" && styles.darkText,
+              ]}
+            >
+              Save
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Loader while uploading */}
         {uploadMutation.isLoading && (
           <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#0000ff" />
@@ -254,9 +290,8 @@ export default function CameraScreen() {
     );
   }
 
-  // Render the camera interface
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, theme === "dark" && styles.darkBackground]}>
       <CameraView
         mode={"video"}
         style={styles.camera}
@@ -264,26 +299,50 @@ export default function CameraScreen() {
         ref={cameraRef}
       >
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <AntDesign name="retweet" size={44} color="black" />
+          <TouchableOpacity
+            style={[styles.button, theme === "dark" && styles.darkButton]}
+            onPress={toggleCameraFacing}
+          >
+            <AntDesign
+              name="retweet"
+              size={44}
+              color={theme === "dark" ? "#ffffff" : "#000000"}
+            />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, theme === "dark" && styles.darkButton]}
             onPress={isRecording ? handleStopRecording : handleStartRecording}
           >
             {isRecording ? (
-              <FontAwesome5 name={"stop-circle"} size={44} color="black" />
+              <FontAwesome5
+                name={"stop-circle"}
+                size={44}
+                color={theme === "dark" ? "#ffffff" : "#000000"}
+              />
             ) : (
-              <AntDesign name={"camera"} size={44} color="black" />
+              <AntDesign
+                name={"camera"}
+                size={44}
+                color={theme === "dark" ? "#ffffff" : "#000000"}
+              />
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleUploadVideo}>
-            <AntDesign name="upload" size={44} color="black" />
+          <TouchableOpacity
+            style={[styles.button, theme === "dark" && styles.darkButton]}
+            onPress={handleUploadVideo}
+          >
+            <AntDesign
+              name="upload"
+              size={44}
+              color={theme === "dark" ? "#ffffff" : "#000000"}
+            />
           </TouchableOpacity>
         </View>
         {isRecording && (
           <View style={styles.timerContainer}>
-            <Text style={styles.timerText}>
+            <Text
+              style={[styles.timerText, theme === "dark" && styles.darkText]}
+            >
               {`${Math.floor(recordingTime / 60)}:${(recordingTime % 60)
                 .toString()
                 .padStart(2, "0")}`}
@@ -291,6 +350,13 @@ export default function CameraScreen() {
           </View>
         )}
       </CameraView>
+
+      {/* Theme Toggle Button */}
+      <TouchableOpacity onPress={toggleTheme} style={styles.themeToggleButton}>
+        <Text style={styles.themeToggleText}>
+          Switch to {theme === "light" ? "Dark" : "Light"} Mode
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -299,6 +365,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+  },
+  darkBackground: {
+    backgroundColor: "#121212",
+  },
+  darkText: {
+    color: "#ffffff",
+  },
+  darkButton: {
+    backgroundColor: "#333",
+  },
+  darkCard: {
+    backgroundColor: "#333",
   },
   camera: {
     flex: 1,
@@ -371,15 +449,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f7f7f7", // Background color for the whole screen
+    backgroundColor: "#f7f7f7",
   },
   card: {
-    width: "80%", // Adjust the width to fit your screen
+    width: "80%",
     padding: 20,
     backgroundColor: "#ffffff",
     borderRadius: 15,
-    elevation: 5, // Adds shadow on Android
-    shadowColor: "#000", // Shadow for iOS
+    elevation: 5,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
@@ -399,5 +477,17 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     marginBottom: 20,
+  },
+  themeToggleButton: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    padding: 10,
+    backgroundColor: "#007bff",
+    borderRadius: 5,
+  },
+  themeToggleText: {
+    color: "#ffffff",
+    fontSize: 16,
   },
 });
